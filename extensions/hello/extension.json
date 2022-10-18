@@ -1,0 +1,13 @@
+{
+  "name": "Hello World", 
+  "service_worker_scripts": [
+    "js/worker.js"
+  ], 
+  "content_scripts": [
+    "js/content.js"
+  ], 
+  "permissions": [
+  ],
+  "host_permissions": [
+  ]
+}
