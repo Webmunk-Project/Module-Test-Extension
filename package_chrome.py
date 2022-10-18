@@ -1,9 +1,11 @@
+# pylint: disable=consider-using-f-string, line-too-long, missing-module-docstring
+
 import json
 import io
 import os
 import zipfile
 
-manifest = json.load(open('manifest.json'))
+manifest = json.load(io.open('manifest.json', mode='r', encoding='utf-8')) # pylint: disable=consider-using-with
 
 def write_to_zip(zip_file, new_file, base_dir=''):
     full_path = '%s/%s' % (base_dir, new_file)
@@ -25,7 +27,7 @@ with zipfile.ZipFile('chrome-extension.zip', mode='w') as extension_zip:
     content_script_lines = []
 
     for extension in manifest.get('webmunk_extensions', []):
-        extension_manifest = json.load(open('%s/extension.json' % extension))
+        extension_manifest = json.load(open('%s/extension.json' % extension)) # pylint: disable-consider-using-with
 
         print('Bundling %s...' % extension_manifest.get('name', None))
 
@@ -40,7 +42,7 @@ with zipfile.ZipFile('chrome-extension.zip', mode='w') as extension_zip:
 
         for script in extension_manifest.get('content_scripts', []):
             script_filename = '%s/%s' % (extension, script)
-            
+
             print('Reading %s' % script_filename)
 
             with io.open(script_filename, mode='r', encoding='utf-8') as content_script:
@@ -92,6 +94,3 @@ with zipfile.ZipFile('chrome-extension.zip', mode='w') as extension_zip:
                 content_lines.append(line)
 
     extension_zip.writestr('js/app/content-script.js', ''.join(content_lines))
-
-
-
