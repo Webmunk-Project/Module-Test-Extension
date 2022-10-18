@@ -57,8 +57,8 @@ with zipfile.ZipFile('chrome-extension.zip', mode='w') as extension_zip:
             if (permission in manifest['host_permissions']) is False:
                 manifest['host_permissions'].append(permission)
 
-    if 'webmunk_extensions' in manifest:
-        del manifest['webmunk_extensions']
+    if 'custom_extensions' in manifest:
+        del manifest['custom_extensions']
 
     extension_zip.writestr('manifest.json', json.dumps(manifest, indent=2))
     extension_zip.write('index.html')

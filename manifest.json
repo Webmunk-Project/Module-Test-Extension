@@ -32,7 +32,7 @@
   "host_permissions": [
     "<all_urls>"
   ],
-  "webmunk_extensions": [
+  "custom_extensions": [
   	"extensions/hello"
   ]
 }
