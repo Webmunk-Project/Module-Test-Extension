@@ -28,4 +28,4 @@ This project uses continous integration [provided by CircleCI](https://app.circl
 
 ## Contact Information
 
-This a very early stage project, so please contact (chris@audacious-software.com)[mailto:chris@audacious-software.com] if you have any questions or uncover a bug or other defect.
+This a very early stage project, so please contact [chris@audacious-software.com](mailto:chris@audacious-software.com) if you have any questions or uncover a bug or other defect.
