@@ -1,4 +1,4 @@
-# pylint: disable=consider-using-f-string, line-too-long, missing-module-docstring
+# pylint: disable=consider-using-f-string, line-too-long, missing-module-docstring, missing-function-docstring
 
 import json
 import io
@@ -27,7 +27,7 @@ with zipfile.ZipFile('chrome-extension.zip', mode='w') as extension_zip:
     content_script_lines = []
 
     for extension in manifest.get('webmunk_extensions', []):
-        extension_manifest = json.load(open('%s/extension.json' % extension)) # pylint: disable-consider-using-with
+        extension_manifest = json.load(io.open('%s/extension.json' % extension, mode='r', encoding='utf-8')) # pylint: disable=consider-using-with
 
         print('Bundling %s...' % extension_manifest.get('name', None))
 
