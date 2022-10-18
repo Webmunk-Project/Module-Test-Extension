@@ -24,6 +24,7 @@ jobs:
             npm install
             npx eslint js/
             npx eslint extensions/
+            pylint package_chrome.py
       - save_cache:
           key: build-{{ .Branch }}-{{ checksum "package.json" }}
           paths:
