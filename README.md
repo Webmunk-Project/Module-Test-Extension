@@ -24,7 +24,7 @@ The [page content script](https://github.com/audacious-software/Extensible-Test-
 
 ## Other Project Notes
 
-This project uses continous integration [provided by CircleCI](https://app.circleci.com/pipelines/github/audacious-software/Extensible-Test-Extension) to inspect the quality of each repository push. Currently, quality is assessed using the [JavaScript Standard Style](https://standardjs.com/) using [ESLint](https://eslint.org/). For specific details, please refer to the project's [CircleCI configuration file](https://github.com/audacious-software/Extensible-Test-Extension/blob/main/.circleci/config.yml) file for the latest details.
+This project uses continous integration [provided by CircleCI](https://app.circleci.com/pipelines/github/audacious-software/Extensible-Test-Extension) to inspect the quality of each repository push. Currently, quality is assessed using the [JavaScript Standard Style](https://standardjs.com/) with [ESLint](https://eslint.org/). Please refer to the project's [CircleCI configuration file](https://github.com/audacious-software/Extensible-Test-Extension/blob/main/.circleci/config.yml) file for the latest testing details.
 
 ## Contact Information
 
