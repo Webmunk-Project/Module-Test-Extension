@@ -24,6 +24,7 @@ jobs:
             npm install
             npx eslint js/
             npx eslint modules/
+            pip install --upgrade pip
             pip install pylint
             pylint package_chrome.py
       - save_cache:

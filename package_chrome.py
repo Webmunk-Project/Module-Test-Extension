@@ -1,3 +1,5 @@
+# pylint: disable=line-too-long
+
 import argparse
 import json
 import io
@@ -11,7 +13,7 @@ parser.add_argument('--dir', action='store_true', help='Generate expanded direct
 
 args = vars(parser.parse_args())
 
-manifest = json.load(open('manifest.json'))
+manifest = json.load(io.open('manifest.json', mode='r', encoding='utf-8')) # pylint: disable=consider-using-with
 
 def write_to_zip(zip_file, new_file, base_dir=''):
     full_path = '%s/%s' % (base_dir, new_file)
@@ -33,7 +35,7 @@ with zipfile.ZipFile('chrome-extension.zip', mode='w') as extension_zip:
     content_script_lines = []
 
     for module in manifest.get('modules', []):
-        module_manifest = json.load(open('%s/module.json' % module))
+        module_manifest = json.load(io.open('%s/module.json' % module, mode='r', encoding='utf-8')) # pylint: disable=consider-using-with
 
         print('Bundling %s...' % module_manifest.get('name', None))
 
