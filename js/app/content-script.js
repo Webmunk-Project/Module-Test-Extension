@@ -10,7 +10,7 @@ window.registerModuleCallback = function (callback) {
   window.testModuleCallbacks.push(callback)
 }
 
-function locationFilterMatches (location, filters) {
+function locationFilterMatches (location, filters) { // eslint-disable-line no-unused-vars
   let hostMatch = false
   let pathMatch = true
 
@@ -64,7 +64,6 @@ function locationFilterMatches (location, filters) {
 
   return hostMatch && pathMatch
 }
-
 
 console.log('[Module Test Extension] Loading content script...')
 
