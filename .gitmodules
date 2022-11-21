@@ -1,0 +1,6 @@
+[submodule "modules/screenshot"]
+	path = modules/screenshot
+	url = https://github.com/audacious-software/Screenshot-Module.git
+[submodule "modules/cookies"]
+	path = modules/cookies
+	url = https://github.com/audacious-software/Extension-Cookie-Module.git

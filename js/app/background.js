@@ -83,7 +83,7 @@ chrome.storage.local.get(['PDKExtensionInstallTime'], function (result) {
 chrome.alarms.create('pdk-upload', { periodInMinutes: 5 })
 
 const uploadData = function (alarm) {
-  console.log('[Extensible Test Extension] Uploading queued data points...')
+  console.log('[Module Test Extension] Uploading queued data points...')
 
   // Note that URL below is typically dynamically configured by a fuller plugin instead
   // of being hard-coded, as well as the null content encryption key below.
@@ -98,18 +98,18 @@ const uploadData = function (alarm) {
 
 chrome.alarms.onAlarm.addListener(uploadData)
 
-const customExtensions = []
+const customModules = []
 
-const registerCustomExtension = function (callback) { // eslint-disable-line no-unused-vars
-  customExtensions.push(callback)
+const registerCustomModule = function (callback) { // eslint-disable-line no-unused-vars
+  customModules.push(callback)
 }
 
-console.log('[Extensible Test Extension] Initialized.')
+console.log('[Module Test Extension] Initialized.')
 
 const config = {}
 
-for (let i = 0; i < customExtensions.length; i++) {
-  customExtensions[i](config)
+for (let i = 0; i < customModules.length; i++) {
+  customModules[i](config)
 }
 
 uploadData('pdk-upload')

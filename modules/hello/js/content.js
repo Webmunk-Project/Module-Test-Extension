@@ -1,6 +1,6 @@
 /* global chrome */
 
-window.registerExtensionCallback(function (config) {
+window.registerModuleCallback(function (config) {
   console.log('[Hello World] Greetings from the page context!')
 
   console.log('[Hello World] Preparing transmission to remote server...')

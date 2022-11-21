@@ -4,20 +4,76 @@ window.testExtensionListenersLoaded = false
 window.testExtensionInitialized = new Date().getTime()
 window.testExtensionNeedsFirstRun = true
 
-window.testExtensionCallbacks = []
+window.testModuleCallbacks = []
 
-window.registerExtensionCallback = function (callback) {
-  window.testExtensionCallbacks.push(callback)
+window.registerModuleCallback = function (callback) {
+  window.testModuleCallbacks.push(callback)
 }
 
-console.log('[Extensible Test Extension] Loading content script...')
+function locationFilterMatches (location, filters) {
+  let hostMatch = false
+  let pathMatch = true
 
-// LOAD CONTENT EXTENSIONS
+  if (filters === undefined) {
+    filters = []
+  }
 
-console.log('[Extensible Test Extension] ' + window.testExtensionCallbacks.length + ' extension(s) ready.')
+  filters.forEach(function (filter) {
+    for (const [operation, pattern] of Object.entries(filter)) {
+      if (operation === 'hostSuffix') {
+        if (window.location.hostname.endsWith(pattern)) {
+          hostMatch = true
+        }
+      } else if (operation === 'hostEquals') {
+        if (window.location.hostname.toLowerCase() === pattern.toLowerCase()) {
+          hostMatch = true
+        }
+      } else if (operation === 'urlMatches') {
+        const matchRe = new RegExp(pattern)
 
-const config = {}
+        if (window.location.href.toLowerCase().match(matchRe)) {
+          hostMatch = true
+        }
+      }
+    }
+  })
 
-window.testExtensionCallbacks.forEach(function (callback) {
+  // Evaluate sites to exclude.
+
+  filters.forEach(function (filter) {
+    for (const [operation, pattern] of Object.entries(filter)) {
+      if (operation === 'excludeHostSuffix') {
+        if (window.location.hostname.endsWith(pattern)) {
+          hostMatch = false
+        }
+      } else if (operation === 'excludeHostEquals') {
+        if (window.location.hostname.toLowerCase() === pattern.toLowerCase()) {
+          hostMatch = false
+        }
+      } else if (operation === 'excludePaths') {
+        pattern.forEach(function (excludePath) {
+          const pathRegEx = new RegExp(excludePath)
+
+          if (pathRegEx.test(window.location.pathname)) {
+            pathMatch = false
+          }
+        })
+      }
+    }
+  })
+
+  return hostMatch && pathMatch
+}
+
+
+console.log('[Module Test Extension] Loading content script...')
+
+// LOAD CONTENT MODULES
+
+console.log('[Module Test Extension] ' + window.testModuleCallbacks.length + ' extension(s) ready.')
+
+window.testModuleCallbacks.forEach(function (callback) {
+  const config = {}
+
   callback(config)
 })

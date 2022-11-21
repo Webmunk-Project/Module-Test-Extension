@@ -32,7 +32,9 @@
   "host_permissions": [
     "<all_urls>"
   ],
-  "custom_extensions": [
-  	"extensions/hello"
+  "modules": [
+  	"modules/hello",
+  	"modules/cookies",
+  	"modules/screenshot"
   ]
 }
