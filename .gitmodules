@@ -7,3 +7,9 @@
 [submodule "modules/cookie-ui"]
 	path = modules/cookie-ui
 	url = https://github.com/audacious-software/Cookie-UI-Module
+[submodule "cookie-ui"]
+	url = git@github.com:audacious-software/Cookie-UI-Module.git
+[submodule "cookies"]
+	url = git@github.com:audacious-software/Extension-Cookie-Module.git
+[submodule "screenshot"]
+	url = git@github.com:audacious-software/Screenshot-Module.git
