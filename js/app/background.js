@@ -27,7 +27,23 @@ chrome.action.onClicked.addListener(function (tab) {
   openWindow()
 })
 
+let initialized = false
+
 const loadExtension = function (tabId) {
+  if (initialized === false) {
+    initialized = true
+
+    console.log('[Module Test Extension] Initialized. ' + customModules.length)
+
+    const config = {}
+
+    for (let i = 0; i < customModules.length; i++) {
+      customModules[i](config)
+    }
+
+    uploadData('pdk-upload')
+  }
+
   chrome.scripting.executeScript({
     target: {
       tabId: tabId,
@@ -45,7 +61,17 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   }
 })
 
+const customMessageHandlers = {}
+
+const registerMessageHandler = function (name, callback) { // eslint-disable-line no-unused-vars
+  customMessageHandlers[name] = callback
+}
+
 function handleMessage (request, sender, sendResponse) {
+  if (request.content === undefined) {
+    return false
+  }
+
   if (request.content === 'record_data_point') {
     request.payload['tab-id'] = sender.tab.id
 
@@ -58,6 +84,16 @@ function handleMessage (request, sender, sendResponse) {
 
     if (request.uploadNow) {
       uploadData('pdk-upload')
+    }
+  } else {
+    const customCallback = customMessageHandlers[request.content]
+
+    console.log('LOOKING FOR CUSTOM: ' + request.content)
+    console.log(customCallback)
+    console.log(request)
+
+    if (customCallback !== undefined) {
+      customCallback(request, sender, sendResponse)
     }
   }
 
@@ -103,13 +139,3 @@ const customModules = []
 const registerCustomModule = function (callback) { // eslint-disable-line no-unused-vars
   customModules.push(callback)
 }
-
-console.log('[Module Test Extension] Initialized.')
-
-const config = {}
-
-for (let i = 0; i < customModules.length; i++) {
-  customModules[i](config)
-}
-
-uploadData('pdk-upload')

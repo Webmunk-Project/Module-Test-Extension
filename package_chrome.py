@@ -5,6 +5,8 @@ import json
 import io
 import os
 import shutil
+import sys
+import traceback
 import zipfile
 
 parser = argparse.ArgumentParser(description='Packages extension for Chrome distribution.')
@@ -35,33 +37,52 @@ with zipfile.ZipFile('chrome-extension.zip', mode='w') as extension_zip:
     content_script_lines = []
 
     for module in manifest.get('modules', []):
-        module_manifest = json.load(io.open('%s/module.json' % module, mode='r', encoding='utf-8')) # pylint: disable=consider-using-with
+        try:
+            module_manifest = json.load(io.open('%s/module.json' % module, mode='r', encoding='utf-8')) # pylint: disable=consider-using-with
 
-        print('Bundling %s...' % module_manifest.get('name', None))
+            print('Bundling %s...' % module_manifest.get('name', None))
 
-        for script in module_manifest.get('service_worker_scripts', []):
-            script_filename = '%s/%s' % (module, script)
+            for script in module_manifest.get('service_worker_scripts', []):
+                script_filename = '%s/%s' % (module, script)
 
-            package_filename = 'js/%s/%s' % (module, script)
+                package_filename = 'js/%s/%s' % (module, script)
 
-            extension_zip.write(script_filename, package_filename)
+                extension_zip.write(script_filename, package_filename)
 
-            service_worker_scripts.append(package_filename)
+                service_worker_scripts.append(package_filename)
 
-        for script in module_manifest.get('content_scripts', []):
-            script_filename = '%s/%s' % (module, script)
+            for script in module_manifest.get('content_include', []):
+                script_filename = '%s/%s' % (module, script)
 
-            with io.open(script_filename, mode='r', encoding='utf-8') as content_script:
-                for content_line in content_script.readlines():
-                    content_script_lines.append(content_line)
+                package_filename = 'js/%s/%s' % (module, script)
 
-        for permission in module_manifest.get('permissions', []):
-            if (permission in manifest['permissions']) is False:
-                manifest['permissions'].append(permission)
+                extension_zip.write(script_filename, package_filename)
 
-        for permission in module_manifest.get('host_permissions', []):
-            if (permission in manifest['host_permissions']) is False:
-                manifest['host_permissions'].append(permission)
+            for script in module_manifest.get('content_scripts', []):
+                script_filename = '%s/%s' % (module, script)
+
+                with io.open(script_filename, mode='r', encoding='utf-8') as content_script:
+                    for content_line in content_script.readlines():
+                        content_script_lines.append(content_line)
+
+            for permission in module_manifest.get('permissions', []):
+                if (permission in manifest['permissions']) is False:
+                    manifest['permissions'].append(permission)
+
+            for permission in module_manifest.get('host_permissions', []):
+                if (permission in manifest['host_permissions']) is False:
+                    manifest['host_permissions'].append(permission)
+
+            action = module_manifest.get('action', None)
+
+            if action is not None:
+                manifest['action'] = action
+
+        except:
+            print('Error processing %s:' % module)
+            traceback.print_exc()
+
+            sys.exit('Unable to proceed.')
 
     if 'modules' in manifest:
         del manifest['modules']

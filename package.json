@@ -1,11 +1,12 @@
 {
-  "name": "pdk_browser_extension",
+  "name": "modular-browser-extension",
   "version": "1.0.0",
-  "description": "Browser extension for building Passive Data Kit studies.",
+  "description": "Framework for building modular browser extensions.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "private": true,
   "author": "Chris J. Karr",
   "license": "Apache-2.0",
   "devDependencies": {
@@ -14,5 +15,9 @@
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.1.1"
+  },
+  "dependencies": {
+  	"hello": "path:modules/hello",
+  	"cookie-ui": "path:modules/cookie-ui"
   }
 }

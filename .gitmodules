@@ -4,3 +4,6 @@
 [submodule "modules/cookies"]
 	path = modules/cookies
 	url = https://github.com/audacious-software/Extension-Cookie-Module.git
+[submodule "modules/cookie-ui"]
+	path = modules/cookie-ui
+	url = https://github.com/audacious-software/Cookie-UI-Module
