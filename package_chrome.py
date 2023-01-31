@@ -78,7 +78,7 @@ with zipfile.ZipFile('chrome-extension.zip', mode='w') as extension_zip:
             if action is not None:
                 manifest['action'] = action
 
-        except:
+        except: # pylint: disable=bare-except
             print('Error processing %s:' % module)
             traceback.print_exc()
 
