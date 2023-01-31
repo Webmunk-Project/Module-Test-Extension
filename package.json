@@ -17,7 +17,7 @@
     "eslint-plugin-promise": "^5.1.1"
   },
   "dependencies": {
-  	"hello": "path:modules/hello",
-  	"cookie-ui": "path:modules/cookie-ui"
+  	"hello": "file:modules/hello",
+  	"cookie-ui": "file:modules/cookie-ui"
   }
 }
