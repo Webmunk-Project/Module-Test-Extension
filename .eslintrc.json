@@ -4,6 +4,7 @@
         "amd": true,
         "jquery": true
     },
-    "root": true
+    "root": true,
+    "ignorePatterns": ["**/autoconsent/**"]
 }
 

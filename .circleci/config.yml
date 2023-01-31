@@ -36,4 +36,7 @@ jobs:
       - store_artifacts:
           path: test-reports/
           destination: javascript_app
+      - store_artifacts:
+          path: .npm/_logs/
+          destination: npm_logs
 
