@@ -1,7 +1,10 @@
-/* global chrome, indexedDB, fetch, nacl */
+/* global chrome, indexedDB, fetch, Blob, nacl */
 
 const pdkFunction = function () {
   const pdk = {}
+
+  pdk.queuedPoints = []
+  pdk.lastPersisted = 0
 
   pdk.openDatabase = function (success, failure) {
     if (pdk.db !== undefined) {
@@ -43,31 +46,32 @@ const pdkFunction = function () {
     }
   }
 
-  pdk.enqueueDataPoint = function (generatorId, dataPoint, complete) {
+  pdk.persistDataPoints = function (complete) {
+    pdk.lastPersisted = Date.now()
+
+    const pendingPoints = pdk.queuedPoints
+
+    pdk.queuedPoints = []
+
     pdk.openDatabase(function (db) {
-      const payload = {
-        generatorId: generatorId,
-        dataPoint: dataPoint,
-        date: (new Date()).getTime(),
-        transmitted: 0
-      }
+      const objectStore = db.transaction(['dataPoints'], 'readwrite').objectStore('dataPoints')
 
-      const request = db.transaction(['dataPoints'], 'readwrite')
-        .objectStore('dataPoints')
-        .put(payload)
+      pendingPoints.forEach(function (point) {
+        const request = objectStore.add(point)
 
-      request.onsuccess = function (event) {
-        console.log('[PDK] Data point saved successfully: ' + generatorId + '.')
+        request.onsuccess = function (event) {
+          // console.log('[PDK] Data point saved successfully: ' + generatorId + '.')
+        }
 
-        complete()
-      }
+        request.onerror = function (event) {
+          console.log('[PDK] Data point enqueuing failed: ' + point.generatorId + '.')
+          console.log(event)
+        }
+      })
 
-      request.onerror = function (event) {
-        console.log('[PDK] Data point enqueuing failed: ' + generatorId + '.')
-        console.log(event)
+      console.log('[PDK] Data points saved successfully: ' + pendingPoints.length + '.')
 
-        complete()
-      }
+      complete()
     }, function (error) {
       if (error) {
         console.log(error)
@@ -75,9 +79,41 @@ const pdkFunction = function () {
     })
   }
 
+  pdk.enqueueDataPoint = function (generatorId, dataPoint, complete) {
+    if (generatorId !== null && dataPoint !== null) {
+      const dataJson = JSON.stringify(dataPoint)
+
+      const payload = {
+        generatorId: generatorId, // eslint-disable-line object-shorthand
+        dataPoint: JSON.parse(dataJson),
+        date: (new Date()).getTime(),
+        transmitted: 0
+      }
+
+      pdk.queuedPoints.push(payload)
+    }
+
+    if (pdk.queuedPoints.length > 0 && (Date.now() - pdk.lastPersisted) > 1000) {
+      pdk.persistDataPoints(complete)
+    } else {
+      complete()
+    }
+  }
+
   pdk.currentlyUploading = false
 
-  pdk.uploadQueuedDataPoints = function (endpoint, serverKey, callback) {
+  pdk.uploadProgressCallback = null
+  pdk.uploadCompleteCallback = null
+
+  pdk.uploadQueuedDataPoints = function (endpoint, serverKey, progressCallback, completeCallback) {
+    if (progressCallback !== null && pdk.uploadProgressCallback === null) {
+      pdk.uploadProgressCallback = progressCallback
+    }
+
+    if (completeCallback !== null && pdk.uploadCompleteCallback === null) {
+      pdk.uploadCompleteCallback = completeCallback
+    }
+
     if (pdk.currentlyUploading) {
       return
     }
@@ -95,18 +131,29 @@ const pdkFunction = function () {
         const pendingItems = request.result
 
         if (pendingItems.length === 0) {
-          callback() // Finished
+          if (pdk.uploadCompleteCallback !== null) {
+            pdk.uploadCompleteCallback() // Finished
+          }
 
           pdk.currentlyUploading = false
+
+          pdk.uploadCompleteCallback = null
+          pdk.uploadProgressCallback = null
         } else {
           const toTransmit = []
           const xmitBundle = []
 
-          console.log('[PDK] Remaining data points: ' + pendingItems.length)
+          const pendingRemaining = pendingItems.length
+
+          console.log('[PDK] Remaining data points: ' + pendingRemaining)
+
+          if (pdk.uploadProgressCallback !== undefined && pdk.uploadProgressCallback !== null) {
+            pdk.uploadProgressCallback(pendingRemaining)
+          }
 
           let bundleLength = 0
 
-          for (let i = 0; i < pendingItems.length && bundleLength < (4 * 1024 * 1024); i++) {
+          for (let i = 0; i < pendingRemaining && bundleLength < (4 * 1024 * 1024); i++) {
             const pendingItem = pendingItems[i]
 
             pendingItem.transmitted = new Date().getTime()
@@ -117,25 +164,35 @@ const pdkFunction = function () {
             toTransmit.push(pendingItem)
             xmitBundle.push(pendingItem.dataPoint)
 
-            const bundleString = JSON.stringify(xmitBundle)
+            const bundleString = JSON.stringify(pendingItem.dataPoint)
 
             bundleLength += bundleString.length
           }
 
+          const status = {
+            pending_points: pendingRemaining,
+            generatorId: 'pdk-system-status'
+          }
+
+          xmitBundle.push(status)
+
           console.log('[PDK] Created bundle of size ' + bundleLength + '.')
 
           if (toTransmit.length === 0) {
-            callback()
+            pdk.uploadCompleteCallback()
 
             pdk.currentlyUploading = false
+
+            pdk.uploadCompleteCallback = null
+            pdk.uploadProgressCallback = null
           } else {
-            chrome.storage.local.get({ 'pdk-identifier': 'unknown' }, function (result) {
+            chrome.storage.local.get({ 'pdk-identifier': '' }, function (result) {
               if (result['pdk-identifier'] !== '') {
                 pdk.uploadBundle(endpoint, serverKey, result['pdk-identifier'], xmitBundle, function () {
                   pdk.updateDataPoints(toTransmit, function () {
                     pdk.currentlyUploading = false
 
-                    pdk.uploadQueuedDataPoints(endpoint, serverKey, callback)
+                    pdk.uploadQueuedDataPoints(endpoint, serverKey, progressCallback, completeCallback)
                   })
                 })
               }
@@ -218,18 +275,77 @@ const pdkFunction = function () {
     }
   }
 
+  pdk.createAttachment = function (dataUrl, uploadedFiles) {
+    const dataTokens = dataUrl.split(';')
+
+    if (dataTokens.length < 3) {
+      return dataUrl
+    }
+
+    const mimeType = dataTokens[0].replace('data:', '')
+    let filename = dataTokens[1].replace('name=', '')
+    const content = dataTokens[2].replace('base64,', '')
+
+    const byteArray = Uint8Array.from(atob(content).split('').map(char => char.charCodeAt(0)))
+
+    const contentBlob = new Blob([byteArray], {
+      type: mimeType
+    })
+
+    const fileIndex = 0
+
+    const fileComponents = filename.split('.')
+
+    while (uploadedFiles[filename] !== undefined) {
+      const suffix = '-' + fileIndex
+
+      if (fileComponents.length > 1) {
+        filename = fileComponents[0] + suffix + '.' + fileComponents[1]
+      } else {
+        filename = fileComponents[0] + suffix
+      }
+    }
+
+    uploadedFiles[filename] = contentBlob
+
+    return filename
+  }
+
+  pdk.downloadAttachments = function (dataPoint, uploadedFiles) {
+    Object.keys(dataPoint).forEach(function (key) {
+      const value = dataPoint[key]
+
+      if (key.endsWith('@')) {
+        if (Array.isArray(value)) {
+          const replacements = []
+
+          value.forEach(function (item) {
+            replacements.push(pdk.createAttachment(item, uploadedFiles))
+          })
+
+          dataPoint[key] = replacements
+        } else if (typeof value === 'string' || value instanceof String) {
+          dataPoint[key] = pdk.createAttachment(value, uploadedFiles)
+        }
+      } else if (Array.isArray(value)) {
+        value.forEach(function (item) {
+          pdk.downloadAttachments(item, uploadedFiles)
+        })
+      } else if (typeof value === 'object') {
+        pdk.downloadAttachments(value, uploadedFiles)
+      }
+    })
+  }
+
   pdk.uploadBundle = function (endpoint, serverKey, userId, points, complete) {
     const manifest = chrome.runtime.getManifest()
 
-    let keyPair = null
-    let serverPublicKey = null
-
-    if (serverKey !== null) {
-      keyPair = nacl.box.keyPair()
-      serverPublicKey = nacl.util.decodeBase64(serverKey)
-    }
+    // const keyPair = nacl.box.keyPair()
+    // const serverPublicKey = nacl.util.decodeBase64(serverKey)
 
     const userAgent = manifest.name + '/' + manifest.version + ' ' + navigator.userAgent
+
+    const uploadedFiles = {}
 
     for (let i = 0; i < points.length; i++) {
       const metadata = {}
@@ -242,32 +358,34 @@ const pdkFunction = function () {
       metadata.generator = points[i].generatorId + ': ' + userAgent
       metadata['generator-id'] = points[i].generatorId
       metadata.timestamp = points[i].date / 1000 // Unix timestamp
-
-      if (keyPair !== null) {
-        metadata['generated-key'] = nacl.util.encodeBase64(keyPair.publicKey)
-      }
-
+      // metadata['generated-key'] = nacl.util.encodeBase64(keyPair.publicKey)
       metadata.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
       points[i]['passive-data-metadata'] = metadata
 
-      if (keyPair !== null && serverPublicKey !== null) {
-        pdk.encryptFields(serverPublicKey, keyPair.secretKey, points[i])
-      }
+      // pdk.encryptFields(serverPublicKey, keyPair.secretKey, points[i])
+      pdk.downloadAttachments(points[i], uploadedFiles)
     }
 
     const dataString = JSON.stringify(points, null, 2)
 
+    const formData = new FormData()
+    formData.append('payload', dataString)
+
+    Object.keys(uploadedFiles).forEach(function (fileKey) {
+      formData.append(fileKey, uploadedFiles[fileKey])
+    })
+
     fetch(endpoint, {
-      method: 'CREATE',
+      method: 'POST',
       mode: 'cors', // no-cors, *cors, same-origin
       cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      // headers: {
+      //   'Content-Type': 'application/json'
+      // },
       redirect: 'follow', // manual, *follow, error
       referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-      body: dataString // body data type must match "Content-Type" header
+      body: formData // body data type must match "Content-Type" header
     })
       .then(response => response.json())
       .then(function (data) {

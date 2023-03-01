@@ -2,11 +2,11 @@
   "name": "Extensible Test Extension", 
   "short_name": "Extensible Test Extension", 
   "icons": {
-      "256": "images/icon-256.png", 
-      "128": "images/icon-128.png", 
-      "48": "images/icon-48.png",
-      "32": "images/icon-32.png", 
-      "16": "images/icon-16.png"
+    "256": "images/icon-256.png", 
+    "128": "images/icon-128.png", 
+    "48": "images/icon-48.png",
+    "32": "images/icon-32.png", 
+    "16": "images/icon-16.png"
   }, 
   "description": "Minimalist extension for testing extensions for other extensions.", 
   "background": {
@@ -21,10 +21,10 @@
       "48": "images/icon-48.png",
       "32": "images/icon-32.png", 
       "16": "images/icon-16.png"
-	}    
+    }    
   }, 
   "permissions": [
-  	"scripting",
+    "scripting",
     "storage", 
     "alarms",
     "tabs"
@@ -33,8 +33,8 @@
     "<all_urls>"
   ],
   "modules": [
-  	"modules/hello",
-  	"modules/cookies",
-  	"modules/screenshot"
+    "modules/hello",
+    "modules/ad-scraper",
+    "modules/cookies"
   ]
 }

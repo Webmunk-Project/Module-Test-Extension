@@ -46,8 +46,8 @@ const loadExtension = function (tabId) {
 
   chrome.scripting.executeScript({
     target: {
-      tabId: tabId,
-      allFrames: true
+      allFrames: true,
+      tabId
     },
     files: ['/vendor/js/jquery.js', '/js/app/content-script.js']
   }, function (result) {
